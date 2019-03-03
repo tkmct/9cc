@@ -34,7 +34,7 @@ Node *new_node_num(int val) {
 }
 
 int consume(int ty) {
-  if (tokens[pos].ty != ty)
+  if (((Token *)tokens->data[pos])->ty != ty)
     return 0;
   pos++;
   return 1;
@@ -44,14 +44,14 @@ Node *term() {
   if (consume('(')) {
     Node *node = add();
     if (!consume(')'))
-      fprintf(stderr, "No closing parentheses: %s", tokens[pos].input);
+      fprintf(stderr, "No closing parentheses: %s", ((Token *)tokens->data[pos])->input);
     return node;
   }
 
-  if (tokens[pos].ty == TK_NUM)
-    return new_node_num(tokens[pos++].val);
+  if (((Token *)tokens->data[pos])->ty == TK_NUM)
+    return new_node_num(((Token *)tokens->data[pos++])->val);
 
-  fprintf(stderr, "Not a number nor open parentheses: %s", tokens[pos].input);
+  fprintf(stderr, "Not a number nor open parentheses: %s", ((Token *)tokens->data[pos])->input);
 }
 
   
