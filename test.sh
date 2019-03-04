@@ -3,7 +3,7 @@ try() {
   expected="$1"
   input="$2"
 
-  gcc -o 9cc 9cc.c
+  gcc -w -o 9cc 9cc.c
   ./9cc "$input" > tmp.s
   gcc -o tmp tmp.s
   ./tmp
