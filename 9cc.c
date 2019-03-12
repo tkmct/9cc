@@ -118,7 +118,14 @@ void tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
+    if ( *p == '+'
+        || *p == '-'
+        || *p == '*'
+        || *p == '/'
+        || *p == '('
+        || *p == ')'
+        || *p == '='
+        || *p == ';') {
       vec_push(tokens, new_token(*p, 0, NULL));
       p++;
       continue;
@@ -162,13 +169,12 @@ Node *add();
 Node *mul();
 Node *term();
 
-Node *code[100];
+Vector *code;
 
 void program() {
-  int i = 0;
+  code = new_vector();
   while (((Token *)tokens->data[pos])->ty != TK_EOF)
-    code[i++] = stmt();
-  code[i] = NULL;
+    vec_push(code, (void *)stmt());
 }
 
 Node *new_node(int ty, Node *lhs, Node *rhs) {
@@ -361,11 +367,11 @@ int main(int argc, char **argv) {
   // prologue
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, 208\n"); // Need to calculate base pointer offset by number of variables
 
   // generate code from the first line
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
+  for (int i = 0; i < code->len; i++) {
+    gen(code->data[i]);
 
     // pop remaining statement's value
     printf("  pop rax\n");
