@@ -136,9 +136,14 @@ void tokenize(char *p) {
       continue;
     }
 
-    if ('a' <= *p && *p <= 'z') {
-      vec_push(tokens, new_token(TK_IDENT, 0, p));
-      p++;
+    if (isalpha(*p) || *p == '_') {
+      int len = 1;
+      while (isalpha(p[len]) || isdigit(p[len]) || p[len] == '_')
+        len++;
+
+      char *name = strndup(p, len);
+      vec_push(tokens, new_token(TK_IDENT, 0, name));
+      p += len;
       continue;
     }
 
@@ -160,7 +165,7 @@ typedef struct Node {
   struct Node *lhs;
   struct Node *rhs;
   int val;
-  char name;
+  char *name;
 } Node;
 
 Node *stmt();
@@ -170,9 +175,12 @@ Node *mul();
 Node *term();
 
 Vector *code;
+Map *vars;
 
 void program() {
   code = new_vector();
+  vars = new_map();
+
   while (((Token *)tokens->data[pos])->ty != TK_EOF)
     vec_push(code, (void *)stmt());
 }
@@ -195,7 +203,7 @@ Node *new_node_num(int val) {
 Node *new_node_ident(char *ident) {
   Node *node = malloc(sizeof(Node));
   node->ty = ND_IDENT;
-  node->name = *ident;
+  node->name = ident;
   return node;
 }
 
@@ -209,7 +217,7 @@ int consume(int ty) {
 Node *stmt() {
   Node *node = assign();
   if (!consume(';')) {
-    fprintf(stderr, "Invalid token. expected ';' but got %s:", ((Token *)tokens->data[pos])->input);
+    fprintf(stderr, "Invalid token. expected ';' but got %s:\n", ((Token *)tokens->data[pos])->input);
     exit(1);
   }
   return node;
@@ -218,8 +226,11 @@ Node *stmt() {
 Node *assign() {
   Node *node = add();
 
-  if (consume('='))
-    node = new_node('=', node, assign());
+  if (consume('=')) {
+    Node* rhs = assign();
+    map_put(vars, node->name, (void *)vars->keys->len);
+    node = new_node('=', node, rhs);
+  }
   return node;
 }
 
@@ -275,12 +286,11 @@ void gen_lval(Node *node) {
     exit(1);
   }
 
-  int offset = ('z' - node->name + 1) * 8;
+  int offset = ((int)map_get(vars, node->name) + 1) * 8;
   printf("  mov rax, rbp\n");
   printf("  sub rax, %d\n", offset);
   printf("  push rax\n");
 }
-
 
 void gen(Node *node) {
   if (node->ty == ND_NUM) {
@@ -367,7 +377,7 @@ int main(int argc, char **argv) {
   // prologue
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n"); // Need to calculate base pointer offset by number of variables
+  printf("  sub rsp, %d\n", vars->keys->len * 8);
 
   // generate code from the first line
   for (int i = 0; i < code->len; i++) {

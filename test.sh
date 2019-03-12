@@ -25,5 +25,9 @@ try 47 "5+6*7;"
 try 15 "5*(9-6);"
 try 4 "(3+5)/2;"
 try 5 "a = 5; a;"
+try 1 "a = b = 1;"
+try 4 "ab = 4; ab;"
+try 20 "ab = 5; cd = 4; ab*cd;"
+try 1 "_foo = 1; _foo;";
 
 echo OK
