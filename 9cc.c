@@ -4,22 +4,19 @@
 #include <string.h>
 
 // TOKENIZER
-enum
-{
+enum {
   TK_NUM = 256,
   TK_IDENT,
   TK_EOF,
 };
 
-typedef struct
-{
+typedef struct {
   void **data;
   int capacity;
   int len;
 } Vector;
 
-Vector *new_vector()
-{
+Vector *new_vector() {
   Vector *vec = malloc(sizeof(Vector));
   vec->data = malloc(sizeof(void *) * 16);
   vec->capacity = 16;
@@ -27,25 +24,21 @@ Vector *new_vector()
   return vec;
 }
 
-void vec_push(Vector *vec, void *elem)
-{
-  if (vec->capacity == vec->len)
-  {
+void vec_push(Vector *vec, void *elem) {
+  if (vec->capacity == vec->len) {
     vec->capacity *= 2;
     vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
   }
   vec->data[vec->len++] = elem;
 }
 
-typedef struct
-{
+typedef struct {
   int ty;
   int val;
   char *input;
 } Token;
 
-Token *new_token(int ty, int val, char *input)
-{
+Token *new_token(int ty, int val, char *input) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;
   t->val = val;
@@ -58,8 +51,7 @@ Token *new_token(int ty, int val, char *input)
 int pos = 0;
 Vector *tokens;
 
-void tokenize(char *p)
-{
+void tokenize(char *p) {
   tokens = new_vector();
 
   while (*p) {
