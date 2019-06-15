@@ -9,6 +9,7 @@ enum {
   TK_NUM = 256,
   TK_IDENT,
   TK_EOF,
+  TK_RETURN,
 };
 
 typedef struct {
@@ -105,6 +106,13 @@ Token *new_token(int ty, int val, char *input) {
   return t;
 }
 
+int is_alnum(char c) {
+  return ('a' <= c && c <= 'z') ||
+    ('A' <= c && c <= 'Z') ||
+    ('0' <= c && c <= '9') ||
+    (c == '_');
+}
+
 // token position
 int pos = 0;
 Vector *tokens;
@@ -113,6 +121,12 @@ void tokenize(char *p) {
   tokens = new_vector();
 
   while (*p) {
+    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
+      vec_push(tokens, new_token(TK_RETURN, 0, NULL));
+      p += 6;
+      continue;
+    }
+
     if (isspace(*p)) {
       p++;
       continue;
@@ -158,6 +172,7 @@ void tokenize(char *p) {
 enum {
   ND_NUM = 256,
   ND_IDENT,
+  ND_RETURN,
 };
 
 typedef struct Node {
@@ -214,14 +229,6 @@ int consume(int ty) {
   return 1;
 }
 
-Node *stmt() {
-  Node *node = assign();
-  if (!consume(';')) {
-    fprintf(stderr, "Invalid token. expected ';' but got %s:\n", ((Token *)tokens->data[pos])->input);
-    exit(1);
-  }
-  return node;
-}
 
 Node *assign() {
   Node *node = add();
@@ -230,6 +237,29 @@ Node *assign() {
     Node* rhs = assign();
     map_put(vars, node->name, (void *)vars->keys->len);
     node = new_node('=', node, rhs);
+  }
+  return node;
+}
+
+
+Node *expr() {
+  return assign();
+}
+
+
+Node *stmt() {
+  Node *node;
+  if (consume(TK_RETURN)) {
+    node = malloc(sizeof(Node));
+    node->ty = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
+
+  if (!consume(';')) {
+    fprintf(stderr, "Invalid token. expected ';' but got %s:\n", ((Token *)tokens->data[pos])->input);
+    exit(1);
   }
   return node;
 }
@@ -293,6 +323,15 @@ void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
+  if (node->ty == ND_RETURN) {
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    return;
+  }
+
   if (node->ty == ND_NUM) {
     printf("  push %d\n", node->val);
     return;

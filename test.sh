@@ -29,5 +29,6 @@ try 1 "a = b = 1;"
 try 4 "ab = 4; ab;"
 try 20 "ab = 5; cd = 4; ab*cd;"
 try 1 "_foo = 1; _foo;";
+try 1 "a = 1; return a;"
 
 echo OK
